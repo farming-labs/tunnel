@@ -1,16 +1,20 @@
 {
-  "name": "@farm.js/preview-agent-rs-win32-x64-msvc",
+  "name": "@farm.js/tunnel-win32-x64-msvc",
   "version": "0.1.0",
   "cpu": [
     "x64"
   ],
-  "main": "farm-preview-agent.win32-x64-msvc.node",
+  "main": "tunnel.win32-x64-msvc.node",
   "files": [
-    "farm-preview-agent.win32-x64-msvc.node"
+    "tunnel.win32-x64-msvc.node"
   ],
-  "description": "Rust N-API persistent preview tunnel agent for Farm.js",
+  "description": "Persistent Rust N-API preview tunnel for Farm.js",
   "license": "MIT",
+  "repository": "https://github.com/farming-labs/tunnel",
   "os": [
     "win32"
-  ]
+  ],
+  "publishConfig": {
+    "access": "public"
+  }
 }

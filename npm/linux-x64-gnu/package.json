@@ -1,19 +1,23 @@
 {
-  "name": "@farm.js/preview-agent-rs-linux-x64-gnu",
+  "name": "@farm.js/tunnel-linux-x64-gnu",
   "version": "0.1.0",
   "cpu": [
     "x64"
   ],
-  "main": "farm-preview-agent.linux-x64-gnu.node",
+  "main": "tunnel.linux-x64-gnu.node",
   "files": [
-    "farm-preview-agent.linux-x64-gnu.node"
+    "tunnel.linux-x64-gnu.node"
   ],
-  "description": "Rust N-API persistent preview tunnel agent for Farm.js",
+  "description": "Persistent Rust N-API preview tunnel for Farm.js",
   "license": "MIT",
+  "repository": "https://github.com/farming-labs/tunnel",
   "os": [
     "linux"
   ],
   "libc": [
     "glibc"
-  ]
+  ],
+  "publishConfig": {
+    "access": "public"
+  }
 }

@@ -70,13 +70,13 @@ function requireNative() {
   } else if (process.platform === 'android') {
     if (process.arch === 'arm64') {
       try {
-        return require('./farm-preview-agent.android-arm64.node')
+        return require('./tunnel.android-arm64.node')
       } catch (e) {
         loadErrors.push(e)
       }
       try {
-        const binding = require('@farm.js/preview-agent-rs-android-arm64')
-        const bindingPackageVersion = require('@farm.js/preview-agent-rs-android-arm64/package.json').version
+        const binding = require('@farm.js/tunnel-android-arm64')
+        const bindingPackageVersion = require('@farm.js/tunnel-android-arm64/package.json').version
         if (bindingPackageVersion !== '0.1.0' && process.env.NAPI_RS_ENFORCE_VERSION_CHECK && process.env.NAPI_RS_ENFORCE_VERSION_CHECK !== '0') {
           throw new Error(`Native binding package version mismatch, expected 0.1.0 but got ${bindingPackageVersion}. You can reinstall dependencies to fix this issue.`)
         }
@@ -86,13 +86,13 @@ function requireNative() {
       }
     } else if (process.arch === 'arm') {
       try {
-        return require('./farm-preview-agent.android-arm-eabi.node')
+        return require('./tunnel.android-arm-eabi.node')
       } catch (e) {
         loadErrors.push(e)
       }
       try {
-        const binding = require('@farm.js/preview-agent-rs-android-arm-eabi')
-        const bindingPackageVersion = require('@farm.js/preview-agent-rs-android-arm-eabi/package.json').version
+        const binding = require('@farm.js/tunnel-android-arm-eabi')
+        const bindingPackageVersion = require('@farm.js/tunnel-android-arm-eabi/package.json').version
         if (bindingPackageVersion !== '0.1.0' && process.env.NAPI_RS_ENFORCE_VERSION_CHECK && process.env.NAPI_RS_ENFORCE_VERSION_CHECK !== '0') {
           throw new Error(`Native binding package version mismatch, expected 0.1.0 but got ${bindingPackageVersion}. You can reinstall dependencies to fix this issue.`)
         }
@@ -107,13 +107,13 @@ function requireNative() {
     if (process.arch === 'x64') {
       if ((process.config && process.config.variables && process.config.variables.shlib_suffix === 'dll.a') || (process.config && process.config.variables && process.config.variables.node_target_type === 'shared_library')) {
         try {
-        return require('./farm-preview-agent.win32-x64-gnu.node')
+        return require('./tunnel.win32-x64-gnu.node')
       } catch (e) {
         loadErrors.push(e)
       }
       try {
-        const binding = require('@farm.js/preview-agent-rs-win32-x64-gnu')
-        const bindingPackageVersion = require('@farm.js/preview-agent-rs-win32-x64-gnu/package.json').version
+        const binding = require('@farm.js/tunnel-win32-x64-gnu')
+        const bindingPackageVersion = require('@farm.js/tunnel-win32-x64-gnu/package.json').version
         if (bindingPackageVersion !== '0.1.0' && process.env.NAPI_RS_ENFORCE_VERSION_CHECK && process.env.NAPI_RS_ENFORCE_VERSION_CHECK !== '0') {
           throw new Error(`Native binding package version mismatch, expected 0.1.0 but got ${bindingPackageVersion}. You can reinstall dependencies to fix this issue.`)
         }
@@ -123,13 +123,13 @@ function requireNative() {
       }
       } else {
         try {
-        return require('./farm-preview-agent.win32-x64-msvc.node')
+        return require('./tunnel.win32-x64-msvc.node')
       } catch (e) {
         loadErrors.push(e)
       }
       try {
-        const binding = require('@farm.js/preview-agent-rs-win32-x64-msvc')
-        const bindingPackageVersion = require('@farm.js/preview-agent-rs-win32-x64-msvc/package.json').version
+        const binding = require('@farm.js/tunnel-win32-x64-msvc')
+        const bindingPackageVersion = require('@farm.js/tunnel-win32-x64-msvc/package.json').version
         if (bindingPackageVersion !== '0.1.0' && process.env.NAPI_RS_ENFORCE_VERSION_CHECK && process.env.NAPI_RS_ENFORCE_VERSION_CHECK !== '0') {
           throw new Error(`Native binding package version mismatch, expected 0.1.0 but got ${bindingPackageVersion}. You can reinstall dependencies to fix this issue.`)
         }
@@ -140,13 +140,13 @@ function requireNative() {
       }
     } else if (process.arch === 'ia32') {
       try {
-        return require('./farm-preview-agent.win32-ia32-msvc.node')
+        return require('./tunnel.win32-ia32-msvc.node')
       } catch (e) {
         loadErrors.push(e)
       }
       try {
-        const binding = require('@farm.js/preview-agent-rs-win32-ia32-msvc')
-        const bindingPackageVersion = require('@farm.js/preview-agent-rs-win32-ia32-msvc/package.json').version
+        const binding = require('@farm.js/tunnel-win32-ia32-msvc')
+        const bindingPackageVersion = require('@farm.js/tunnel-win32-ia32-msvc/package.json').version
         if (bindingPackageVersion !== '0.1.0' && process.env.NAPI_RS_ENFORCE_VERSION_CHECK && process.env.NAPI_RS_ENFORCE_VERSION_CHECK !== '0') {
           throw new Error(`Native binding package version mismatch, expected 0.1.0 but got ${bindingPackageVersion}. You can reinstall dependencies to fix this issue.`)
         }
@@ -156,13 +156,13 @@ function requireNative() {
       }
     } else if (process.arch === 'arm64') {
       try {
-        return require('./farm-preview-agent.win32-arm64-msvc.node')
+        return require('./tunnel.win32-arm64-msvc.node')
       } catch (e) {
         loadErrors.push(e)
       }
       try {
-        const binding = require('@farm.js/preview-agent-rs-win32-arm64-msvc')
-        const bindingPackageVersion = require('@farm.js/preview-agent-rs-win32-arm64-msvc/package.json').version
+        const binding = require('@farm.js/tunnel-win32-arm64-msvc')
+        const bindingPackageVersion = require('@farm.js/tunnel-win32-arm64-msvc/package.json').version
         if (bindingPackageVersion !== '0.1.0' && process.env.NAPI_RS_ENFORCE_VERSION_CHECK && process.env.NAPI_RS_ENFORCE_VERSION_CHECK !== '0') {
           throw new Error(`Native binding package version mismatch, expected 0.1.0 but got ${bindingPackageVersion}. You can reinstall dependencies to fix this issue.`)
         }
@@ -175,13 +175,13 @@ function requireNative() {
     }
   } else if (process.platform === 'darwin') {
     try {
-      return require('./farm-preview-agent.darwin-universal.node')
+      return require('./tunnel.darwin-universal.node')
     } catch (e) {
       loadErrors.push(e)
     }
     try {
-      const binding = require('@farm.js/preview-agent-rs-darwin-universal')
-      const bindingPackageVersion = require('@farm.js/preview-agent-rs-darwin-universal/package.json').version
+      const binding = require('@farm.js/tunnel-darwin-universal')
+      const bindingPackageVersion = require('@farm.js/tunnel-darwin-universal/package.json').version
       if (bindingPackageVersion !== '0.1.0' && process.env.NAPI_RS_ENFORCE_VERSION_CHECK && process.env.NAPI_RS_ENFORCE_VERSION_CHECK !== '0') {
         throw new Error(`Native binding package version mismatch, expected 0.1.0 but got ${bindingPackageVersion}. You can reinstall dependencies to fix this issue.`)
       }
@@ -191,13 +191,13 @@ function requireNative() {
     }
     if (process.arch === 'x64') {
       try {
-        return require('./farm-preview-agent.darwin-x64.node')
+        return require('./tunnel.darwin-x64.node')
       } catch (e) {
         loadErrors.push(e)
       }
       try {
-        const binding = require('@farm.js/preview-agent-rs-darwin-x64')
-        const bindingPackageVersion = require('@farm.js/preview-agent-rs-darwin-x64/package.json').version
+        const binding = require('@farm.js/tunnel-darwin-x64')
+        const bindingPackageVersion = require('@farm.js/tunnel-darwin-x64/package.json').version
         if (bindingPackageVersion !== '0.1.0' && process.env.NAPI_RS_ENFORCE_VERSION_CHECK && process.env.NAPI_RS_ENFORCE_VERSION_CHECK !== '0') {
           throw new Error(`Native binding package version mismatch, expected 0.1.0 but got ${bindingPackageVersion}. You can reinstall dependencies to fix this issue.`)
         }
@@ -207,13 +207,13 @@ function requireNative() {
       }
     } else if (process.arch === 'arm64') {
       try {
-        return require('./farm-preview-agent.darwin-arm64.node')
+        return require('./tunnel.darwin-arm64.node')
       } catch (e) {
         loadErrors.push(e)
       }
       try {
-        const binding = require('@farm.js/preview-agent-rs-darwin-arm64')
-        const bindingPackageVersion = require('@farm.js/preview-agent-rs-darwin-arm64/package.json').version
+        const binding = require('@farm.js/tunnel-darwin-arm64')
+        const bindingPackageVersion = require('@farm.js/tunnel-darwin-arm64/package.json').version
         if (bindingPackageVersion !== '0.1.0' && process.env.NAPI_RS_ENFORCE_VERSION_CHECK && process.env.NAPI_RS_ENFORCE_VERSION_CHECK !== '0') {
           throw new Error(`Native binding package version mismatch, expected 0.1.0 but got ${bindingPackageVersion}. You can reinstall dependencies to fix this issue.`)
         }
@@ -227,13 +227,13 @@ function requireNative() {
   } else if (process.platform === 'freebsd') {
     if (process.arch === 'x64') {
       try {
-        return require('./farm-preview-agent.freebsd-x64.node')
+        return require('./tunnel.freebsd-x64.node')
       } catch (e) {
         loadErrors.push(e)
       }
       try {
-        const binding = require('@farm.js/preview-agent-rs-freebsd-x64')
-        const bindingPackageVersion = require('@farm.js/preview-agent-rs-freebsd-x64/package.json').version
+        const binding = require('@farm.js/tunnel-freebsd-x64')
+        const bindingPackageVersion = require('@farm.js/tunnel-freebsd-x64/package.json').version
         if (bindingPackageVersion !== '0.1.0' && process.env.NAPI_RS_ENFORCE_VERSION_CHECK && process.env.NAPI_RS_ENFORCE_VERSION_CHECK !== '0') {
           throw new Error(`Native binding package version mismatch, expected 0.1.0 but got ${bindingPackageVersion}. You can reinstall dependencies to fix this issue.`)
         }
@@ -243,13 +243,13 @@ function requireNative() {
       }
     } else if (process.arch === 'arm64') {
       try {
-        return require('./farm-preview-agent.freebsd-arm64.node')
+        return require('./tunnel.freebsd-arm64.node')
       } catch (e) {
         loadErrors.push(e)
       }
       try {
-        const binding = require('@farm.js/preview-agent-rs-freebsd-arm64')
-        const bindingPackageVersion = require('@farm.js/preview-agent-rs-freebsd-arm64/package.json').version
+        const binding = require('@farm.js/tunnel-freebsd-arm64')
+        const bindingPackageVersion = require('@farm.js/tunnel-freebsd-arm64/package.json').version
         if (bindingPackageVersion !== '0.1.0' && process.env.NAPI_RS_ENFORCE_VERSION_CHECK && process.env.NAPI_RS_ENFORCE_VERSION_CHECK !== '0') {
           throw new Error(`Native binding package version mismatch, expected 0.1.0 but got ${bindingPackageVersion}. You can reinstall dependencies to fix this issue.`)
         }
@@ -264,13 +264,13 @@ function requireNative() {
     if (process.arch === 'x64') {
       if (isMusl()) {
         try {
-          return require('./farm-preview-agent.linux-x64-musl.node')
+          return require('./tunnel.linux-x64-musl.node')
         } catch (e) {
           loadErrors.push(e)
         }
         try {
-          const binding = require('@farm.js/preview-agent-rs-linux-x64-musl')
-          const bindingPackageVersion = require('@farm.js/preview-agent-rs-linux-x64-musl/package.json').version
+          const binding = require('@farm.js/tunnel-linux-x64-musl')
+          const bindingPackageVersion = require('@farm.js/tunnel-linux-x64-musl/package.json').version
           if (bindingPackageVersion !== '0.1.0' && process.env.NAPI_RS_ENFORCE_VERSION_CHECK && process.env.NAPI_RS_ENFORCE_VERSION_CHECK !== '0') {
             throw new Error(`Native binding package version mismatch, expected 0.1.0 but got ${bindingPackageVersion}. You can reinstall dependencies to fix this issue.`)
           }
@@ -280,13 +280,13 @@ function requireNative() {
         }
       } else {
         try {
-          return require('./farm-preview-agent.linux-x64-gnu.node')
+          return require('./tunnel.linux-x64-gnu.node')
         } catch (e) {
           loadErrors.push(e)
         }
         try {
-          const binding = require('@farm.js/preview-agent-rs-linux-x64-gnu')
-          const bindingPackageVersion = require('@farm.js/preview-agent-rs-linux-x64-gnu/package.json').version
+          const binding = require('@farm.js/tunnel-linux-x64-gnu')
+          const bindingPackageVersion = require('@farm.js/tunnel-linux-x64-gnu/package.json').version
           if (bindingPackageVersion !== '0.1.0' && process.env.NAPI_RS_ENFORCE_VERSION_CHECK && process.env.NAPI_RS_ENFORCE_VERSION_CHECK !== '0') {
             throw new Error(`Native binding package version mismatch, expected 0.1.0 but got ${bindingPackageVersion}. You can reinstall dependencies to fix this issue.`)
           }
@@ -298,13 +298,13 @@ function requireNative() {
     } else if (process.arch === 'arm64') {
       if (isMusl()) {
         try {
-          return require('./farm-preview-agent.linux-arm64-musl.node')
+          return require('./tunnel.linux-arm64-musl.node')
         } catch (e) {
           loadErrors.push(e)
         }
         try {
-          const binding = require('@farm.js/preview-agent-rs-linux-arm64-musl')
-          const bindingPackageVersion = require('@farm.js/preview-agent-rs-linux-arm64-musl/package.json').version
+          const binding = require('@farm.js/tunnel-linux-arm64-musl')
+          const bindingPackageVersion = require('@farm.js/tunnel-linux-arm64-musl/package.json').version
           if (bindingPackageVersion !== '0.1.0' && process.env.NAPI_RS_ENFORCE_VERSION_CHECK && process.env.NAPI_RS_ENFORCE_VERSION_CHECK !== '0') {
             throw new Error(`Native binding package version mismatch, expected 0.1.0 but got ${bindingPackageVersion}. You can reinstall dependencies to fix this issue.`)
           }
@@ -314,13 +314,13 @@ function requireNative() {
         }
       } else {
         try {
-          return require('./farm-preview-agent.linux-arm64-gnu.node')
+          return require('./tunnel.linux-arm64-gnu.node')
         } catch (e) {
           loadErrors.push(e)
         }
         try {
-          const binding = require('@farm.js/preview-agent-rs-linux-arm64-gnu')
-          const bindingPackageVersion = require('@farm.js/preview-agent-rs-linux-arm64-gnu/package.json').version
+          const binding = require('@farm.js/tunnel-linux-arm64-gnu')
+          const bindingPackageVersion = require('@farm.js/tunnel-linux-arm64-gnu/package.json').version
           if (bindingPackageVersion !== '0.1.0' && process.env.NAPI_RS_ENFORCE_VERSION_CHECK && process.env.NAPI_RS_ENFORCE_VERSION_CHECK !== '0') {
             throw new Error(`Native binding package version mismatch, expected 0.1.0 but got ${bindingPackageVersion}. You can reinstall dependencies to fix this issue.`)
           }
@@ -332,13 +332,13 @@ function requireNative() {
     } else if (process.arch === 'arm') {
       if (isMusl()) {
         try {
-          return require('./farm-preview-agent.linux-arm-musleabihf.node')
+          return require('./tunnel.linux-arm-musleabihf.node')
         } catch (e) {
           loadErrors.push(e)
         }
         try {
-          const binding = require('@farm.js/preview-agent-rs-linux-arm-musleabihf')
-          const bindingPackageVersion = require('@farm.js/preview-agent-rs-linux-arm-musleabihf/package.json').version
+          const binding = require('@farm.js/tunnel-linux-arm-musleabihf')
+          const bindingPackageVersion = require('@farm.js/tunnel-linux-arm-musleabihf/package.json').version
           if (bindingPackageVersion !== '0.1.0' && process.env.NAPI_RS_ENFORCE_VERSION_CHECK && process.env.NAPI_RS_ENFORCE_VERSION_CHECK !== '0') {
             throw new Error(`Native binding package version mismatch, expected 0.1.0 but got ${bindingPackageVersion}. You can reinstall dependencies to fix this issue.`)
           }
@@ -348,13 +348,13 @@ function requireNative() {
         }
       } else {
         try {
-          return require('./farm-preview-agent.linux-arm-gnueabihf.node')
+          return require('./tunnel.linux-arm-gnueabihf.node')
         } catch (e) {
           loadErrors.push(e)
         }
         try {
-          const binding = require('@farm.js/preview-agent-rs-linux-arm-gnueabihf')
-          const bindingPackageVersion = require('@farm.js/preview-agent-rs-linux-arm-gnueabihf/package.json').version
+          const binding = require('@farm.js/tunnel-linux-arm-gnueabihf')
+          const bindingPackageVersion = require('@farm.js/tunnel-linux-arm-gnueabihf/package.json').version
           if (bindingPackageVersion !== '0.1.0' && process.env.NAPI_RS_ENFORCE_VERSION_CHECK && process.env.NAPI_RS_ENFORCE_VERSION_CHECK !== '0') {
             throw new Error(`Native binding package version mismatch, expected 0.1.0 but got ${bindingPackageVersion}. You can reinstall dependencies to fix this issue.`)
           }
@@ -366,13 +366,13 @@ function requireNative() {
     } else if (process.arch === 'loong64') {
       if (isMusl()) {
         try {
-          return require('./farm-preview-agent.linux-loong64-musl.node')
+          return require('./tunnel.linux-loong64-musl.node')
         } catch (e) {
           loadErrors.push(e)
         }
         try {
-          const binding = require('@farm.js/preview-agent-rs-linux-loong64-musl')
-          const bindingPackageVersion = require('@farm.js/preview-agent-rs-linux-loong64-musl/package.json').version
+          const binding = require('@farm.js/tunnel-linux-loong64-musl')
+          const bindingPackageVersion = require('@farm.js/tunnel-linux-loong64-musl/package.json').version
           if (bindingPackageVersion !== '0.1.0' && process.env.NAPI_RS_ENFORCE_VERSION_CHECK && process.env.NAPI_RS_ENFORCE_VERSION_CHECK !== '0') {
             throw new Error(`Native binding package version mismatch, expected 0.1.0 but got ${bindingPackageVersion}. You can reinstall dependencies to fix this issue.`)
           }
@@ -382,13 +382,13 @@ function requireNative() {
         }
       } else {
         try {
-          return require('./farm-preview-agent.linux-loong64-gnu.node')
+          return require('./tunnel.linux-loong64-gnu.node')
         } catch (e) {
           loadErrors.push(e)
         }
         try {
-          const binding = require('@farm.js/preview-agent-rs-linux-loong64-gnu')
-          const bindingPackageVersion = require('@farm.js/preview-agent-rs-linux-loong64-gnu/package.json').version
+          const binding = require('@farm.js/tunnel-linux-loong64-gnu')
+          const bindingPackageVersion = require('@farm.js/tunnel-linux-loong64-gnu/package.json').version
           if (bindingPackageVersion !== '0.1.0' && process.env.NAPI_RS_ENFORCE_VERSION_CHECK && process.env.NAPI_RS_ENFORCE_VERSION_CHECK !== '0') {
             throw new Error(`Native binding package version mismatch, expected 0.1.0 but got ${bindingPackageVersion}. You can reinstall dependencies to fix this issue.`)
           }
@@ -400,13 +400,13 @@ function requireNative() {
     } else if (process.arch === 'riscv64') {
       if (isMusl()) {
         try {
-          return require('./farm-preview-agent.linux-riscv64-musl.node')
+          return require('./tunnel.linux-riscv64-musl.node')
         } catch (e) {
           loadErrors.push(e)
         }
         try {
-          const binding = require('@farm.js/preview-agent-rs-linux-riscv64-musl')
-          const bindingPackageVersion = require('@farm.js/preview-agent-rs-linux-riscv64-musl/package.json').version
+          const binding = require('@farm.js/tunnel-linux-riscv64-musl')
+          const bindingPackageVersion = require('@farm.js/tunnel-linux-riscv64-musl/package.json').version
           if (bindingPackageVersion !== '0.1.0' && process.env.NAPI_RS_ENFORCE_VERSION_CHECK && process.env.NAPI_RS_ENFORCE_VERSION_CHECK !== '0') {
             throw new Error(`Native binding package version mismatch, expected 0.1.0 but got ${bindingPackageVersion}. You can reinstall dependencies to fix this issue.`)
           }
@@ -416,13 +416,13 @@ function requireNative() {
         }
       } else {
         try {
-          return require('./farm-preview-agent.linux-riscv64-gnu.node')
+          return require('./tunnel.linux-riscv64-gnu.node')
         } catch (e) {
           loadErrors.push(e)
         }
         try {
-          const binding = require('@farm.js/preview-agent-rs-linux-riscv64-gnu')
-          const bindingPackageVersion = require('@farm.js/preview-agent-rs-linux-riscv64-gnu/package.json').version
+          const binding = require('@farm.js/tunnel-linux-riscv64-gnu')
+          const bindingPackageVersion = require('@farm.js/tunnel-linux-riscv64-gnu/package.json').version
           if (bindingPackageVersion !== '0.1.0' && process.env.NAPI_RS_ENFORCE_VERSION_CHECK && process.env.NAPI_RS_ENFORCE_VERSION_CHECK !== '0') {
             throw new Error(`Native binding package version mismatch, expected 0.1.0 but got ${bindingPackageVersion}. You can reinstall dependencies to fix this issue.`)
           }
@@ -433,13 +433,13 @@ function requireNative() {
       }
     } else if (process.arch === 'ppc64') {
       try {
-        return require('./farm-preview-agent.linux-ppc64-gnu.node')
+        return require('./tunnel.linux-ppc64-gnu.node')
       } catch (e) {
         loadErrors.push(e)
       }
       try {
-        const binding = require('@farm.js/preview-agent-rs-linux-ppc64-gnu')
-        const bindingPackageVersion = require('@farm.js/preview-agent-rs-linux-ppc64-gnu/package.json').version
+        const binding = require('@farm.js/tunnel-linux-ppc64-gnu')
+        const bindingPackageVersion = require('@farm.js/tunnel-linux-ppc64-gnu/package.json').version
         if (bindingPackageVersion !== '0.1.0' && process.env.NAPI_RS_ENFORCE_VERSION_CHECK && process.env.NAPI_RS_ENFORCE_VERSION_CHECK !== '0') {
           throw new Error(`Native binding package version mismatch, expected 0.1.0 but got ${bindingPackageVersion}. You can reinstall dependencies to fix this issue.`)
         }
@@ -449,13 +449,13 @@ function requireNative() {
       }
     } else if (process.arch === 's390x') {
       try {
-        return require('./farm-preview-agent.linux-s390x-gnu.node')
+        return require('./tunnel.linux-s390x-gnu.node')
       } catch (e) {
         loadErrors.push(e)
       }
       try {
-        const binding = require('@farm.js/preview-agent-rs-linux-s390x-gnu')
-        const bindingPackageVersion = require('@farm.js/preview-agent-rs-linux-s390x-gnu/package.json').version
+        const binding = require('@farm.js/tunnel-linux-s390x-gnu')
+        const bindingPackageVersion = require('@farm.js/tunnel-linux-s390x-gnu/package.json').version
         if (bindingPackageVersion !== '0.1.0' && process.env.NAPI_RS_ENFORCE_VERSION_CHECK && process.env.NAPI_RS_ENFORCE_VERSION_CHECK !== '0') {
           throw new Error(`Native binding package version mismatch, expected 0.1.0 but got ${bindingPackageVersion}. You can reinstall dependencies to fix this issue.`)
         }
@@ -469,13 +469,13 @@ function requireNative() {
   } else if (process.platform === 'openharmony') {
     if (process.arch === 'arm64') {
       try {
-        return require('./farm-preview-agent.openharmony-arm64.node')
+        return require('./tunnel.openharmony-arm64.node')
       } catch (e) {
         loadErrors.push(e)
       }
       try {
-        const binding = require('@farm.js/preview-agent-rs-openharmony-arm64')
-        const bindingPackageVersion = require('@farm.js/preview-agent-rs-openharmony-arm64/package.json').version
+        const binding = require('@farm.js/tunnel-openharmony-arm64')
+        const bindingPackageVersion = require('@farm.js/tunnel-openharmony-arm64/package.json').version
         if (bindingPackageVersion !== '0.1.0' && process.env.NAPI_RS_ENFORCE_VERSION_CHECK && process.env.NAPI_RS_ENFORCE_VERSION_CHECK !== '0') {
           throw new Error(`Native binding package version mismatch, expected 0.1.0 but got ${bindingPackageVersion}. You can reinstall dependencies to fix this issue.`)
         }
@@ -485,13 +485,13 @@ function requireNative() {
       }
     } else if (process.arch === 'x64') {
       try {
-        return require('./farm-preview-agent.openharmony-x64.node')
+        return require('./tunnel.openharmony-x64.node')
       } catch (e) {
         loadErrors.push(e)
       }
       try {
-        const binding = require('@farm.js/preview-agent-rs-openharmony-x64')
-        const bindingPackageVersion = require('@farm.js/preview-agent-rs-openharmony-x64/package.json').version
+        const binding = require('@farm.js/tunnel-openharmony-x64')
+        const bindingPackageVersion = require('@farm.js/tunnel-openharmony-x64/package.json').version
         if (bindingPackageVersion !== '0.1.0' && process.env.NAPI_RS_ENFORCE_VERSION_CHECK && process.env.NAPI_RS_ENFORCE_VERSION_CHECK !== '0') {
           throw new Error(`Native binding package version mismatch, expected 0.1.0 but got ${bindingPackageVersion}. You can reinstall dependencies to fix this issue.`)
         }
@@ -501,13 +501,13 @@ function requireNative() {
       }
     } else if (process.arch === 'arm') {
       try {
-        return require('./farm-preview-agent.openharmony-arm.node')
+        return require('./tunnel.openharmony-arm.node')
       } catch (e) {
         loadErrors.push(e)
       }
       try {
-        const binding = require('@farm.js/preview-agent-rs-openharmony-arm')
-        const bindingPackageVersion = require('@farm.js/preview-agent-rs-openharmony-arm/package.json').version
+        const binding = require('@farm.js/tunnel-openharmony-arm')
+        const bindingPackageVersion = require('@farm.js/tunnel-openharmony-arm/package.json').version
         if (bindingPackageVersion !== '0.1.0' && process.env.NAPI_RS_ENFORCE_VERSION_CHECK && process.env.NAPI_RS_ENFORCE_VERSION_CHECK !== '0') {
           throw new Error(`Native binding package version mismatch, expected 0.1.0 but got ${bindingPackageVersion}. You can reinstall dependencies to fix this issue.`)
         }
@@ -623,10 +623,10 @@ if (!nativeBinding || forceWasi) {
     let candidateError = null
     let candidateFailed = false
     try {
-      candidateError = __napiWasiResolveCandidate('./farm-preview-agent.wasi.cjs', false, ["./farm-preview-agent.wasm32-wasi.debug.wasm","./farm-preview-agent.wasm32-wasi.wasm"])
+      candidateError = __napiWasiResolveCandidate('./tunnel.wasi.cjs', false, ["./tunnel.wasm32-wasi.debug.wasm","./tunnel.wasm32-wasi.wasm"])
       candidateFailed = candidateError !== null
       if (!candidateFailed) {
-        wasiBinding = require('./farm-preview-agent.wasi.cjs')
+        wasiBinding = require('./tunnel.wasi.cjs')
         nativeBinding = wasiBinding
         wasiBindingLoaded = true
       }
@@ -643,16 +643,16 @@ if (!nativeBinding || forceWasi) {
     let candidateError = null
     let candidateFailed = false
     try {
-      candidateError = __napiWasiResolveCandidate('@farm.js/preview-agent-rs-wasm32-wasi', true, undefined)
+      candidateError = __napiWasiResolveCandidate('@farm.js/tunnel-wasm32-wasi', true, undefined)
       candidateFailed = candidateError !== null
       if (!candidateFailed) {
         if (process.env.NAPI_RS_ENFORCE_VERSION_CHECK && process.env.NAPI_RS_ENFORCE_VERSION_CHECK !== '0') {
-          const bindingPackageVersion = require('@farm.js/preview-agent-rs-wasm32-wasi/package.json').version
+          const bindingPackageVersion = require('@farm.js/tunnel-wasm32-wasi/package.json').version
           if (bindingPackageVersion !== '0.1.0') {
             throw new Error(`WASI binding package version mismatch, expected 0.1.0 but got ${bindingPackageVersion}. You can reinstall dependencies to fix this issue.`)
           }
         }
-        wasiBinding = require('@farm.js/preview-agent-rs-wasm32-wasi')
+        wasiBinding = require('@farm.js/tunnel-wasm32-wasi')
         nativeBinding = wasiBinding
         wasiBindingLoaded = true
       }

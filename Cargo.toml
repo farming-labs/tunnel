@@ -1,9 +1,9 @@
 [package]
-name = "farm-preview-agent"
+name = "farm-js-tunnel"
 version = "0.1.0"
 edition = "2024"
 license = "MIT"
-description = "Persistent Rust preview tunnel agent for Farm.js"
+description = "Persistent Rust N-API preview tunnel for Farm.js"
 
 [lib]
 crate-type = ["cdylib"]

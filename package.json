@@ -1,8 +1,15 @@
 {
-  "name": "@farm.js/preview-agent-rs",
+  "name": "@farm.js/tunnel",
   "version": "0.1.0",
-  "description": "Rust N-API persistent preview tunnel agent for Farm.js",
+  "description": "Persistent Rust N-API preview tunnel for Farm.js",
   "license": "MIT",
+  "keywords": [
+    "farm.js",
+    "tunnel",
+    "preview",
+    "napi-rs",
+    "rust"
+  ],
   "main": "index.js",
   "types": "index.d.ts",
   "files": [
@@ -18,8 +25,11 @@
   "devDependencies": {
     "@napi-rs/cli": "^3.8.2"
   },
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "napi": {
-    "binaryName": "farm-preview-agent",
+    "binaryName": "tunnel",
     "targets": [
       "aarch64-apple-darwin",
       "x86_64-apple-darwin",
@@ -29,6 +39,11 @@
       "x86_64-unknown-linux-musl",
       "aarch64-pc-windows-msvc",
       "x86_64-pc-windows-msvc"
-    ]
+    ],
+    "packageName": "@farm.js/tunnel"
+  },
+  "repository": "https://github.com/farming-labs/tunnel",
+  "publishConfig": {
+    "access": "public"
   }
 }
