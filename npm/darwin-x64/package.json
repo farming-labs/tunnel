@@ -1,0 +1,16 @@
+{
+  "name": "@farm.js/preview-agent-rs-darwin-x64",
+  "version": "0.1.0",
+  "cpu": [
+    "x64"
+  ],
+  "main": "farm-preview-agent.darwin-x64.node",
+  "files": [
+    "farm-preview-agent.darwin-x64.node"
+  ],
+  "description": "Rust N-API persistent preview tunnel agent for Farm.js",
+  "license": "MIT",
+  "os": [
+    "darwin"
+  ]
+}

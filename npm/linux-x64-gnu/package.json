@@ -1,0 +1,19 @@
+{
+  "name": "@farm.js/preview-agent-rs-linux-x64-gnu",
+  "version": "0.1.0",
+  "cpu": [
+    "x64"
+  ],
+  "main": "farm-preview-agent.linux-x64-gnu.node",
+  "files": [
+    "farm-preview-agent.linux-x64-gnu.node"
+  ],
+  "description": "Rust N-API persistent preview tunnel agent for Farm.js",
+  "license": "MIT",
+  "os": [
+    "linux"
+  ],
+  "libc": [
+    "glibc"
+  ]
+}

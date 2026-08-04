@@ -1,0 +1,16 @@
+{
+  "name": "@farm.js/preview-agent-rs-win32-x64-msvc",
+  "version": "0.1.0",
+  "cpu": [
+    "x64"
+  ],
+  "main": "farm-preview-agent.win32-x64-msvc.node",
+  "files": [
+    "farm-preview-agent.win32-x64-msvc.node"
+  ],
+  "description": "Rust N-API persistent preview tunnel agent for Farm.js",
+  "license": "MIT",
+  "os": [
+    "win32"
+  ]
+}
