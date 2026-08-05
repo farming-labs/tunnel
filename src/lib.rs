@@ -12,8 +12,7 @@ use reqwest::{Client, Method, Url, header::HeaderMap};
 use serde::{Deserialize, Serialize};
 use tokio::{
     net::TcpStream,
-    sync::{Mutex as AsyncMutex, oneshot},
-    task::JoinHandle,
+    sync::{Mutex as AsyncMutex, oneshot, watch},
     time::{MissedTickBehavior, interval, timeout},
 };
 use tokio_tungstenite::{MaybeTlsStream, WebSocketStream, connect_async, tungstenite::Message};
@@ -22,8 +21,7 @@ type AgentSink = SplitSink<WebSocketStream<MaybeTlsStream<TcpStream>>, Message>;
 
 struct AgentControl {
     stop: oneshot::Sender<()>,
-    done: oneshot::Receiver<()>,
-    task: JoinHandle<()>,
+    done: watch::Receiver<bool>,
 }
 
 static AGENTS: OnceLock<StdMutex<HashMap<String, AgentControl>>> = OnceLock::new();
@@ -110,14 +108,14 @@ pub async fn start_preview_agent(
 
     let sink = std::sync::Arc::new(AsyncMutex::new(sink));
     let (stop_tx, mut stop_rx) = oneshot::channel();
-    let (done_tx, done_rx) = oneshot::channel();
+    let (done_tx, done_rx) = watch::channel(false);
     let client = Client::builder()
         .redirect(reqwest::redirect::Policy::none())
         .build()
         .map_err(|error| napi_error(format!("Could not create the Rust HTTP client: {error}")))?;
     let task_sink = sink.clone();
 
-    let task = napi::tokio::spawn(async move {
+    napi::tokio::spawn(async move {
         let mut local_probe = interval(Duration::from_secs(2));
         local_probe.set_missed_tick_behavior(MissedTickBehavior::Delay);
         local_probe.tick().await;
@@ -160,7 +158,7 @@ pub async fn start_preview_agent(
                 }
             }
         }
-        let _ = done_tx.send(());
+        let _ = done_tx.send(true);
     });
 
     agents()
@@ -171,7 +169,6 @@ pub async fn start_preview_agent(
             AgentControl {
                 stop: stop_tx,
                 done: done_rx,
-                task,
             },
         );
 
@@ -191,9 +188,33 @@ pub async fn stop_preview_agent(session_id: String) -> Result<bool> {
         return Ok(false);
     };
 
+    let mut done = control.done;
     let _ = control.stop.send(());
-    let _ = timeout(Duration::from_secs(5), control.done).await;
-    let _ = control.task.await;
+    if !*done.borrow() {
+        let _ = timeout(Duration::from_secs(5), done.changed()).await;
+    }
+    Ok(true)
+}
+
+#[napi(js_name = "waitPreviewAgent")]
+pub async fn wait_preview_agent(session_id: String) -> Result<bool> {
+    let mut done = agents()
+        .lock()
+        .map_err(|_| napi_error("Rust preview agent registry is unavailable."))?
+        .get(&session_id)
+        .map(|control| control.done.clone());
+    let Some(ref mut done) = done else {
+        return Ok(false);
+    };
+
+    if !*done.borrow() {
+        let _ = done.changed().await;
+    }
+
+    agents()
+        .lock()
+        .map_err(|_| napi_error("Rust preview agent registry is unavailable."))?
+        .remove(&session_id);
     Ok(true)
 }
 
@@ -202,7 +223,9 @@ pub fn active_preview_agent_count() -> Result<u32> {
     let count = agents()
         .lock()
         .map_err(|_| napi_error("Rust preview agent registry is unavailable."))?
-        .len();
+        .values()
+        .filter(|control| !*control.done.borrow())
+        .count();
     Ok(count as u32)
 }
 
