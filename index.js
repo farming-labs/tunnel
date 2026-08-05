@@ -703,3 +703,4 @@ module.exports = nativeBinding
 module.exports.activePreviewAgentCount = nativeBinding.activePreviewAgentCount
 module.exports.startPreviewAgent = nativeBinding.startPreviewAgent
 module.exports.stopPreviewAgent = nativeBinding.stopPreviewAgent
+module.exports.waitPreviewAgent = nativeBinding.waitPreviewAgent

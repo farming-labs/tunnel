@@ -17,6 +17,7 @@ npm run build
 const {
   startPreviewAgent,
   stopPreviewAgent,
+  waitPreviewAgent,
 } = require("@farm.js/tunnel");
 
 const session = await startPreviewAgent(
@@ -26,8 +27,10 @@ const session = await startPreviewAgent(
 );
 
 console.log(session.publicUrl);
-await stopPreviewAgent(session.sessionId);
+await waitPreviewAgent(session.sessionId);
 ```
+
+Call `stopPreviewAgent(session.sessionId)` during explicit shutdown. `waitPreviewAgent(session.sessionId)` resolves when either the relay or local target closes the session, allowing a CLI process to share the tunnel lifecycle.
 
 ## Why N-API instead of WASM?
 

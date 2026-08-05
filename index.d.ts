@@ -10,3 +10,5 @@ export interface PreviewAgentSession {
 export declare function startPreviewAgent(relayUrl: string, name: string, targetUrl: string): Promise<PreviewAgentSession>
 
 export declare function stopPreviewAgent(sessionId: string): Promise<boolean>
+
+export declare function waitPreviewAgent(sessionId: string): Promise<boolean>
