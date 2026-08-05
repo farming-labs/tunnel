@@ -14,13 +14,16 @@
   "types": "index.d.ts",
   "files": [
     "index.js",
-    "index.d.ts",
-    "*.node"
+    "index.d.ts"
   ],
   "scripts": {
+    "artifacts": "napi artifacts",
     "build": "napi build --platform --release",
     "build:debug": "napi build --platform",
-    "test": "node --test test/*.test.mjs"
+    "prepublishOnly": "napi prepublish -t npm",
+    "test": "node --test test/*.test.mjs",
+    "verify:artifacts": "node scripts/verify-artifacts.mjs",
+    "version": "napi version"
   },
   "devDependencies": {
     "@napi-rs/cli": "^3.8.2"
@@ -42,8 +45,22 @@
     ],
     "packageName": "@farm.js/tunnel"
   },
-  "repository": "https://github.com/farming-labs/tunnel",
+  "optionalDependencies": {
+    "@farm.js/tunnel-darwin-arm64": "0.1.0",
+    "@farm.js/tunnel-darwin-x64": "0.1.0",
+    "@farm.js/tunnel-linux-arm64-gnu": "0.1.0",
+    "@farm.js/tunnel-linux-arm64-musl": "0.1.0",
+    "@farm.js/tunnel-linux-x64-gnu": "0.1.0",
+    "@farm.js/tunnel-linux-x64-musl": "0.1.0",
+    "@farm.js/tunnel-win32-arm64-msvc": "0.1.0",
+    "@farm.js/tunnel-win32-x64-msvc": "0.1.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/farming-labs/tunnel.git"
+  },
   "publishConfig": {
-    "access": "public"
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
   }
 }
