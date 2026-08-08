@@ -1,6 +1,6 @@
 # `@farm.js/tunnel`
 
-Experimental Rust/N-API implementation of Farm's persistent preview tunnel protocol.
+Experimental implementation of Farm's persistent preview tunnel protocol.
 
 The agent opens one outbound WebSocket to a Farm preview relay, receives multiplexed HTTP requests, forwards them to a local app, and returns responses over the same connection. It is intentionally stored outside the Farm.js monorepo so it can be released as an optional native package.
 
