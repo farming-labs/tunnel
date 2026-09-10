@@ -18,6 +18,7 @@ use tokio::{
 use tokio_tungstenite::{MaybeTlsStream, WebSocketStream, connect_async, tungstenite::Message};
 
 type AgentSink = SplitSink<WebSocketStream<MaybeTlsStream<TcpStream>>, Message>;
+const DEFAULT_MAX_RESPONSE_BODY_BYTES: usize = 5 * 1024 * 1024;
 
 struct AgentControl {
     stop: oneshot::Sender<()>,
@@ -58,6 +59,7 @@ enum RelayMessage {
     Ready {
         session_id: String,
         public_url: String,
+        max_response_body_bytes: Option<usize>,
     },
     Request {
         id: String,
@@ -93,11 +95,16 @@ pub async fn start_preview_agent(
         .ok_or_else(|| napi_error("Preview relay closed before registration completed."))?
         .map_err(|error| napi_error(format!("Preview relay registration failed: {error}")))?;
     let ready: RelayMessage = parse_message(ready)?;
-    let (session_id, public_url) = match ready {
+    let (session_id, public_url, max_response_body_bytes) = match ready {
         RelayMessage::Ready {
             session_id,
             public_url,
-        } => (session_id, public_url),
+            max_response_body_bytes,
+        } => (
+            session_id,
+            public_url,
+            max_response_body_bytes.unwrap_or(DEFAULT_MAX_RESPONSE_BODY_BYTES),
+        ),
         RelayMessage::Error { message } => return Err(napi_error(message)),
         _ => {
             return Err(napi_error(
@@ -136,7 +143,12 @@ pub async fn start_preview_agent(
                         let request_target = target.clone();
                         let request_sink = task_sink.clone();
                         napi::tokio::spawn(async move {
-                            let response = forward_request(&request_client, &request_target, request).await;
+                            let response = forward_request(
+                                &request_client,
+                                &request_target,
+                                request,
+                                max_response_body_bytes,
+                            ).await;
                             let payload = serde_json::to_string(&response);
                             if let Ok(payload) = payload {
                                 let _ = request_sink.lock().await.send(Message::Text(payload.into())).await;
@@ -237,8 +249,13 @@ struct TunnelRequest {
     body: Option<String>,
 }
 
-async fn forward_request(client: &Client, target: &Url, request: TunnelRequest) -> AgentMessage {
-    match try_forward_request(client, target, &request).await {
+async fn forward_request(
+    client: &Client,
+    target: &Url,
+    request: TunnelRequest,
+    max_response_body_bytes: usize,
+) -> AgentMessage {
+    match try_forward_request(client, target, &request, max_response_body_bytes).await {
         Ok((status, headers, body)) => AgentMessage::Response {
             id: request.id,
             status,
@@ -261,6 +278,7 @@ async fn try_forward_request(
     client: &Client,
     target: &Url,
     request: &TunnelRequest,
+    max_response_body_bytes: usize,
 ) -> std::result::Result<
     (u16, HashMap<String, String>, Vec<u8>),
     Box<dyn std::error::Error + Send + Sync>,
@@ -304,8 +322,26 @@ async fn try_forward_request(
                 .map(|value| (name.to_string(), value.to_string()))
         })
         .collect();
-    let body = response.bytes().await?.to_vec();
+    let mut body = Vec::new();
+    let mut stream = response.bytes_stream();
+    while let Some(chunk) = stream.next().await {
+        append_response_chunk(&mut body, &chunk?, max_response_body_bytes)?;
+    }
     Ok((status, response_headers, body))
+}
+
+fn append_response_chunk(
+    body: &mut Vec<u8>,
+    chunk: &[u8],
+    max_response_body_bytes: usize,
+) -> std::io::Result<()> {
+    if body.len().saturating_add(chunk.len()) > max_response_body_bytes {
+        return Err(std::io::Error::other(format!(
+            "The local preview response exceeded the {max_response_body_bytes} byte limit."
+        )));
+    }
+    body.extend_from_slice(chunk);
+    Ok(())
 }
 
 fn is_hop_by_hop_header(name: &str) -> bool {
@@ -344,4 +380,20 @@ fn parse_relay_message(message: Message) -> std::result::Result<RelayMessage, St
 
 fn napi_error(message: impl Into<String>) -> Error {
     Error::new(Status::GenericFailure, message.into())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::append_response_chunk;
+
+    #[test]
+    fn bounds_buffered_response_bytes() {
+        let mut body = Vec::new();
+        append_response_chunk(&mut body, b"1234", 8).unwrap();
+        append_response_chunk(&mut body, b"5678", 8).unwrap();
+        let error = append_response_chunk(&mut body, b"9", 8).unwrap_err();
+
+        assert_eq!(body, b"12345678");
+        assert!(error.to_string().contains("8 byte limit"));
+    }
 }
