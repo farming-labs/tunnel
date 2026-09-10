@@ -191,6 +191,8 @@ jobs:
         with:
           path: artifacts
       - run: npm run artifacts
+      - name: Prepare release packages
+        run: npx napi prepublish -t npm --skip-optional-publish --no-gh-release
       - run: npm run verify:artifacts
       - name: Publish platform and root packages
         run: npm publish --access public --provenance
