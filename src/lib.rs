@@ -12,7 +12,8 @@ use reqwest::{Client, Method, Url, header::HeaderMap};
 use serde::{Deserialize, Serialize};
 use tokio::{
     net::TcpStream,
-    sync::{Mutex as AsyncMutex, oneshot, watch},
+    sync::{Mutex as AsyncMutex, mpsc, oneshot, watch},
+    task::AbortHandle,
     time::{MissedTickBehavior, interval, timeout},
 };
 use tokio_tungstenite::{MaybeTlsStream, WebSocketStream, connect_async, tungstenite::Message};
@@ -67,6 +68,9 @@ enum RelayMessage {
         path: String,
         headers: HashMap<String, String>,
         body: Option<String>,
+    },
+    Cancel {
+        id: String,
     },
     Error {
         message: String,
@@ -126,6 +130,9 @@ pub async fn start_preview_agent(
         let mut local_probe = interval(Duration::from_secs(2));
         local_probe.set_missed_tick_behavior(MissedTickBehavior::Delay);
         local_probe.tick().await;
+        let mut in_flight = HashMap::<String, (u64, AbortHandle)>::new();
+        let mut request_generation = 0_u64;
+        let (completed_tx, mut completed_rx) = mpsc::unbounded_channel::<(String, u64)>();
 
         loop {
             tokio::select! {
@@ -137,23 +144,43 @@ pub async fn start_preview_agent(
                     let Some(incoming) = incoming else { break };
                     let Ok(incoming) = incoming else { break };
                     let Ok(message) = parse_relay_message(incoming) else { continue };
-                    if let RelayMessage::Request { id, method, path, headers, body } = message {
-                        let request = TunnelRequest { id, method, path, headers, body };
-                        let request_client = client.clone();
-                        let request_target = target.clone();
-                        let request_sink = task_sink.clone();
-                        napi::tokio::spawn(async move {
-                            let response = forward_request(
-                                &request_client,
-                                &request_target,
-                                request,
-                                max_response_body_bytes,
-                            ).await;
-                            let payload = serde_json::to_string(&response);
-                            if let Ok(payload) = payload {
-                                let _ = request_sink.lock().await.send(Message::Text(payload.into())).await;
-                            }
-                        });
+                    match message {
+                        RelayMessage::Request { id, method, path, headers, body } => {
+                            abort_in_flight(&mut in_flight, &id);
+                            request_generation = request_generation.wrapping_add(1);
+                            let generation = request_generation;
+                            let request_id = id.clone();
+                            let request = TunnelRequest { id: id.clone(), method, path, headers, body };
+                            let request_client = client.clone();
+                            let request_target = target.clone();
+                            let request_sink = task_sink.clone();
+                            let request_completed = completed_tx.clone();
+                            let task = napi::tokio::spawn(async move {
+                                let response = forward_request(
+                                    &request_client,
+                                    &request_target,
+                                    request,
+                                    max_response_body_bytes,
+                                ).await;
+                                let payload = serde_json::to_string(&response);
+                                if let Ok(payload) = payload {
+                                    let _ = request_sink.lock().await.send(Message::Text(payload.into())).await;
+                                }
+                                let _ = request_completed.send((request_id, generation));
+                            });
+                            in_flight.insert(id, (generation, task.abort_handle()));
+                        }
+                        RelayMessage::Cancel { id } => {
+                            abort_in_flight(&mut in_flight, &id);
+                        }
+                        _ => {}
+                    }
+                }
+                completed = completed_rx.recv() => {
+                    if let Some((id, generation)) = completed
+                        && in_flight.get(&id).is_some_and(|(current, _)| *current == generation)
+                    {
+                        in_flight.remove(&id);
                     }
                 }
                 _ = local_probe.tick() => {
@@ -169,6 +196,9 @@ pub async fn start_preview_agent(
                     }
                 }
             }
+        }
+        for (_, (_, request)) in in_flight {
+            request.abort();
         }
         let _ = done_tx.send(true);
     });
@@ -188,6 +218,14 @@ pub async fn start_preview_agent(
         session_id,
         public_url,
     })
+}
+
+fn abort_in_flight(in_flight: &mut HashMap<String, (u64, AbortHandle)>, request_id: &str) -> bool {
+    let Some((_, request)) = in_flight.remove(request_id) else {
+        return false;
+    };
+    request.abort();
+    true
 }
 
 #[napi(js_name = "stopPreviewAgent")]
@@ -384,7 +422,9 @@ fn napi_error(message: impl Into<String>) -> Error {
 
 #[cfg(test)]
 mod tests {
-    use super::append_response_chunk;
+    use std::{collections::HashMap, time::Duration};
+
+    use super::{RelayMessage, abort_in_flight, append_response_chunk};
 
     #[test]
     fn bounds_buffered_response_bytes() {
@@ -395,5 +435,29 @@ mod tests {
 
         assert_eq!(body, b"12345678");
         assert!(error.to_string().contains("8 byte limit"));
+    }
+
+    #[test]
+    fn decodes_cancel_messages() {
+        let message: RelayMessage =
+            serde_json::from_str(r#"{"type":"cancel","id":"request-1"}"#).unwrap();
+        assert!(matches!(message, RelayMessage::Cancel { id } if id == "request-1"));
+    }
+
+    #[tokio::test]
+    async fn aborts_only_the_matching_request() {
+        let cancelled = tokio::spawn(std::future::pending::<()>());
+        let retained = tokio::spawn(std::future::pending::<()>());
+        let mut in_flight = HashMap::from([
+            ("cancelled".to_string(), (1, cancelled.abort_handle())),
+            ("retained".to_string(), (2, retained.abort_handle())),
+        ]);
+
+        assert!(abort_in_flight(&mut in_flight, "cancelled"));
+        assert!(!abort_in_flight(&mut in_flight, "missing"));
+        tokio::time::sleep(Duration::from_millis(1)).await;
+        assert!(cancelled.await.unwrap_err().is_cancelled());
+        assert!(!retained.is_finished());
+        retained.abort();
     }
 }
