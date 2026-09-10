@@ -32,6 +32,8 @@ await waitPreviewAgent(session.sessionId);
 
 Call `stopPreviewAgent(session.sessionId)` during explicit shutdown. `waitPreviewAgent(session.sessionId)` resolves when either the relay or local target closes the session, allowing a CLI process to share the tunnel lifecycle.
 
+The agent buffers response bodies only up to the limit advertised by the relay (5 MiB by default). It drops the upstream body immediately and returns a `502` response if the local app exceeds that limit.
+
 ## Why N-API instead of WASM?
 
 The agent owns native TCP/TLS/WebSocket connections and forwards arbitrary HTTP bodies. N-API allows the Rust runtime to do that work directly while presenting a small JavaScript API. A WASM build would still need JavaScript host shims for networking and would not provide a useful comparison of the native transport.
