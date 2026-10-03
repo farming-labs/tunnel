@@ -9,5 +9,6 @@ test("loads the Rust N-API preview agent", () => {
   assert.equal(typeof agent.startPreviewAgent, "function");
   assert.equal(typeof agent.stopPreviewAgent, "function");
   assert.equal(typeof agent.waitPreviewAgent, "function");
+  assert.equal(typeof agent.waitPreviewAgentExit, "function");
   assert.equal(agent.activePreviewAgentCount(), 0);
 });
