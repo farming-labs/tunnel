@@ -18,6 +18,7 @@ const {
   startPreviewAgent,
   stopPreviewAgent,
   waitPreviewAgent,
+  waitPreviewAgentExit,
 } = require("@farm.js/tunnel");
 
 const session = await startPreviewAgent(
@@ -27,10 +28,17 @@ const session = await startPreviewAgent(
 );
 
 console.log(session.publicUrl);
-await waitPreviewAgent(session.sessionId);
+const exit = await waitPreviewAgentExit(session.sessionId);
+if (exit?.closeCode === 1000 && exit.closeReason === "Preview expired") {
+  console.log("The hosted preview reached its expiry.");
+}
 ```
 
 Call `stopPreviewAgent(session.sessionId)` during explicit shutdown. `waitPreviewAgent(session.sessionId)` resolves when either the relay or local target closes the session, allowing a CLI process to share the tunnel lifecycle.
+Use `waitPreviewAgentExit(session.sessionId)` instead when the caller needs the relay's WebSocket
+close code and reason. It returns `null` when the session is not registered and otherwise returns an
+object whose close details are present when the relay sent a close frame. Both wait functions consume
+the same completed session, so call one of them per session.
 
 The agent buffers response bodies only up to the limit advertised by the relay (5 MiB by default). It drops the upstream body immediately and returns a `502` response if the local app exceeds that limit.
 

@@ -2,6 +2,11 @@
 /* eslint-disable */
 export declare function activePreviewAgentCount(): number
 
+export interface PreviewAgentExit {
+  closeCode?: number
+  closeReason?: string
+}
+
 export interface PreviewAgentSession {
   sessionId: string
   publicUrl: string
@@ -12,3 +17,5 @@ export declare function startPreviewAgent(relayUrl: string, name: string, target
 export declare function stopPreviewAgent(sessionId: string): Promise<boolean>
 
 export declare function waitPreviewAgent(sessionId: string): Promise<boolean>
+
+export declare function waitPreviewAgentExit(sessionId: string): Promise<PreviewAgentExit | null>

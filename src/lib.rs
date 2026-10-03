@@ -23,7 +23,7 @@ const DEFAULT_MAX_RESPONSE_BODY_BYTES: usize = 5 * 1024 * 1024;
 
 struct AgentControl {
     stop: oneshot::Sender<()>,
-    done: watch::Receiver<bool>,
+    done: watch::Receiver<Option<PreviewAgentExit>>,
 }
 
 static AGENTS: OnceLock<StdMutex<HashMap<String, AgentControl>>> = OnceLock::new();
@@ -36,6 +36,13 @@ fn agents() -> &'static StdMutex<HashMap<String, AgentControl>> {
 pub struct PreviewAgentSession {
     pub session_id: String,
     pub public_url: String,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+#[napi(object)]
+pub struct PreviewAgentExit {
+    pub close_code: Option<u16>,
+    pub close_reason: Option<String>,
 }
 
 #[derive(Debug, Serialize)]
@@ -119,7 +126,7 @@ pub async fn start_preview_agent(
 
     let sink = std::sync::Arc::new(AsyncMutex::new(sink));
     let (stop_tx, mut stop_rx) = oneshot::channel();
-    let (done_tx, done_rx) = watch::channel(false);
+    let (done_tx, done_rx) = watch::channel(None::<PreviewAgentExit>);
     let client = Client::builder()
         .redirect(reqwest::redirect::Policy::none())
         .build()
@@ -134,15 +141,18 @@ pub async fn start_preview_agent(
         let mut request_generation = 0_u64;
         let (completed_tx, mut completed_rx) = mpsc::unbounded_channel::<(String, u64)>();
 
-        loop {
+        let exit = loop {
             tokio::select! {
                 _ = &mut stop_rx => {
                     let _ = task_sink.lock().await.send(Message::Close(None)).await;
-                    break;
+                    break PreviewAgentExit::default();
                 }
                 incoming = stream.next() => {
-                    let Some(incoming) = incoming else { break };
-                    let Ok(incoming) = incoming else { break };
+                    let Some(incoming) = incoming else { break PreviewAgentExit::default() };
+                    let Ok(incoming) = incoming else { break PreviewAgentExit::default() };
+                    if let Message::Close(frame) = incoming {
+                        break preview_agent_exit_from_close(frame);
+                    }
                     let Ok(message) = parse_relay_message(incoming) else { continue };
                     match message {
                         RelayMessage::Request { id, method, path, headers, body } => {
@@ -192,15 +202,15 @@ pub async fn start_preview_agent(
                         .is_ok();
                     if !reachable {
                         let _ = task_sink.lock().await.send(Message::Close(None)).await;
-                        break;
+                        break PreviewAgentExit::default();
                     }
                 }
             }
-        }
+        };
         for (_, (_, request)) in in_flight {
             request.abort();
         }
-        let _ = done_tx.send(true);
+        let _ = done_tx.send(Some(exit));
     });
 
     agents()
@@ -240,7 +250,7 @@ pub async fn stop_preview_agent(session_id: String) -> Result<bool> {
 
     let mut done = control.done;
     let _ = control.stop.send(());
-    if !*done.borrow() {
+    if done.borrow().is_none() {
         let _ = timeout(Duration::from_secs(5), done.changed()).await;
     }
     Ok(true)
@@ -248,24 +258,34 @@ pub async fn stop_preview_agent(session_id: String) -> Result<bool> {
 
 #[napi(js_name = "waitPreviewAgent")]
 pub async fn wait_preview_agent(session_id: String) -> Result<bool> {
+    Ok(wait_for_preview_agent_exit(&session_id).await?.0)
+}
+
+#[napi(js_name = "waitPreviewAgentExit")]
+pub async fn wait_preview_agent_exit(session_id: String) -> Result<Option<PreviewAgentExit>> {
+    Ok(wait_for_preview_agent_exit(&session_id).await?.1)
+}
+
+async fn wait_for_preview_agent_exit(session_id: &str) -> Result<(bool, Option<PreviewAgentExit>)> {
     let mut done = agents()
         .lock()
         .map_err(|_| napi_error("Rust preview agent registry is unavailable."))?
-        .get(&session_id)
+        .get(session_id)
         .map(|control| control.done.clone());
     let Some(ref mut done) = done else {
-        return Ok(false);
+        return Ok((false, None));
     };
 
-    if !*done.borrow() {
+    if done.borrow().is_none() {
         let _ = done.changed().await;
     }
+    let exit = done.borrow().clone();
 
     agents()
         .lock()
         .map_err(|_| napi_error("Rust preview agent registry is unavailable."))?
-        .remove(&session_id);
-    Ok(true)
+        .remove(session_id);
+    Ok((true, exit))
 }
 
 #[napi(js_name = "activePreviewAgentCount")]
@@ -274,9 +294,21 @@ pub fn active_preview_agent_count() -> Result<u32> {
         .lock()
         .map_err(|_| napi_error("Rust preview agent registry is unavailable."))?
         .values()
-        .filter(|control| !*control.done.borrow())
+        .filter(|control| control.done.borrow().is_none())
         .count();
     Ok(count as u32)
+}
+
+fn preview_agent_exit_from_close(
+    frame: Option<tokio_tungstenite::tungstenite::protocol::CloseFrame>,
+) -> PreviewAgentExit {
+    let Some(frame) = frame else {
+        return PreviewAgentExit::default();
+    };
+    PreviewAgentExit {
+        close_code: Some(frame.code.into()),
+        close_reason: Some(frame.reason.to_string()),
+    }
 }
 
 struct TunnelRequest {
@@ -424,7 +456,23 @@ fn napi_error(message: impl Into<String>) -> Error {
 mod tests {
     use std::{collections::HashMap, time::Duration};
 
-    use super::{RelayMessage, abort_in_flight, append_response_chunk};
+    use futures_util::{SinkExt, StreamExt};
+    use tokio::{
+        net::TcpListener,
+        sync::{oneshot, watch},
+    };
+    use tokio_tungstenite::{
+        accept_async,
+        tungstenite::{
+            Message,
+            protocol::{CloseFrame, frame::coding::CloseCode},
+        },
+    };
+
+    use super::{
+        AgentControl, PreviewAgentExit, RelayMessage, abort_in_flight, agents,
+        append_response_chunk, start_preview_agent, wait_preview_agent, wait_preview_agent_exit,
+    };
 
     #[test]
     fn bounds_buffered_response_bytes() {
@@ -459,5 +507,63 @@ mod tests {
         assert!(cancelled.await.unwrap_err().is_cancelled());
         assert!(!retained.is_finished());
         retained.abort();
+    }
+
+    #[tokio::test]
+    async fn reports_the_relay_close_frame() {
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let address = listener.local_addr().unwrap();
+        let relay = tokio::spawn(async move {
+            let (stream, _) = listener.accept().await.unwrap();
+            let mut socket = accept_async(stream).await.unwrap();
+            let registration = socket.next().await.unwrap().unwrap();
+            assert_eq!(
+                registration.into_text().unwrap(),
+                r#"{"type":"register","name":"expiring"}"#
+            );
+            socket
+                .send(Message::Text(
+                    r#"{"type":"ready","sessionId":"session-expiring","publicUrl":"https://expiring.preview.farmjs.dev"}"#.into(),
+                ))
+                .await
+                .unwrap();
+            socket
+                .send(Message::Close(Some(CloseFrame {
+                    code: CloseCode::Normal,
+                    reason: "Preview expired".into(),
+                })))
+                .await
+                .unwrap();
+        });
+
+        let session = start_preview_agent(
+            format!("ws://{address}"),
+            "expiring".to_string(),
+            "http://127.0.0.1:9".to_string(),
+        )
+        .await
+        .unwrap();
+        let exit = wait_preview_agent_exit(session.session_id)
+            .await
+            .unwrap()
+            .unwrap();
+
+        assert_eq!(exit.close_code, Some(1000));
+        assert_eq!(exit.close_reason.as_deref(), Some("Preview expired"));
+        relay.await.unwrap();
+    }
+
+    #[tokio::test]
+    async fn preserves_the_boolean_wait_contract() {
+        let (stop, _stop_rx) = oneshot::channel();
+        let (done_tx, done) = watch::channel(None);
+        agents()
+            .lock()
+            .unwrap()
+            .insert("legacy-wait".to_string(), AgentControl { stop, done });
+        done_tx.send(Some(PreviewAgentExit::default())).unwrap();
+
+        assert!(wait_preview_agent("legacy-wait".to_string()).await.unwrap());
+        assert!(!wait_preview_agent("legacy-wait".to_string()).await.unwrap());
     }
 }
