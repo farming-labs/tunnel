@@ -194,13 +194,7 @@ pub async fn start_preview_agent(
                     }
                 }
                 _ = local_probe.tick() => {
-                    let reachable = client
-                        .get(target.clone())
-                        .timeout(Duration::from_secs(1))
-                        .send()
-                        .await
-                        .is_ok();
-                    if !reachable {
+                    if !is_local_target_listening(&target).await {
                         let _ = task_sink.lock().await.send(Message::Close(None)).await;
                         break PreviewAgentExit::default();
                     }
@@ -228,6 +222,20 @@ pub async fn start_preview_agent(
         session_id,
         public_url,
     })
+}
+
+/// Whether the local target accepts connections. It opens and closes a TCP connection instead of
+/// sending a request, so it never runs the app's routes or shows up in the app's analytics, and a
+/// page that renders slowly doesn't count as a stopped app.
+async fn is_local_target_listening(target: &Url) -> bool {
+    let (Some(host), Some(port)) = (target.host_str(), target.port_or_known_default()) else {
+        return false;
+    };
+    let host = host.trim_start_matches('[').trim_end_matches(']');
+    matches!(
+        timeout(Duration::from_secs(1), TcpStream::connect((host, port))).await,
+        Ok(Ok(_))
+    )
 }
 
 fn abort_in_flight(in_flight: &mut HashMap<String, (u64, AbortHandle)>, request_id: &str) -> bool {
@@ -469,9 +477,12 @@ mod tests {
         },
     };
 
+    use reqwest::Url;
+
     use super::{
         AgentControl, PreviewAgentExit, RelayMessage, abort_in_flight, agents,
-        append_response_chunk, start_preview_agent, wait_preview_agent, wait_preview_agent_exit,
+        append_response_chunk, is_local_target_listening, start_preview_agent, wait_preview_agent,
+        wait_preview_agent_exit,
     };
 
     #[test]
@@ -507,6 +518,38 @@ mod tests {
         assert!(cancelled.await.unwrap_err().is_cancelled());
         assert!(!retained.is_finished());
         retained.abort();
+    }
+
+    #[tokio::test]
+    async fn checks_the_local_target_without_sending_it_a_request() {
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let target = Url::parse(&format!("http://{}/", listener.local_addr().unwrap())).unwrap();
+        let accepted = tokio::spawn(async move {
+            let (stream, _) = listener.accept().await.unwrap();
+            let mut received = Vec::new();
+            loop {
+                stream.readable().await.unwrap();
+                let mut buffer = [0_u8; 64];
+                match stream.try_read(&mut buffer) {
+                    Ok(0) => return received,
+                    Ok(read) => received.extend_from_slice(&buffer[..read]),
+                    Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => {}
+                    Err(error) => panic!("{error}"),
+                }
+            }
+        });
+
+        assert!(is_local_target_listening(&target).await);
+        assert!(accepted.await.unwrap().is_empty());
+    }
+
+    #[tokio::test]
+    async fn reports_a_stopped_local_target() {
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let target = Url::parse(&format!("http://{}/", listener.local_addr().unwrap())).unwrap();
+        drop(listener);
+
+        assert!(!is_local_target_listening(&target).await);
     }
 
     #[tokio::test]
